@@ -38,18 +38,34 @@ publishTo in ThisBuild := {
 }
 
 lazy val dependencies = Seq(
-  "com.amazonaws" % "aws-java-sdk" % Versions.AwsSdk,
+  "com.amazonaws" % "amazon-sqs-java-messaging-lib" % Versions.AwsSqsJms,
+  "org.apache.avro" % "avro" % Versions.Avro % Provided,
+  "org.apache.kafka" % "kafka-clients" % Versions.Kafka % Provided,
+  "org.apache.kafka" % "connect-api" % Versions.Kafka % Provided,
+  "io.confluent" % "kafka-avro-serializer" % Versions.Confluent % Provided,
+  "io.confluent" % "kafka-schema-registry-client" % Versions.Confluent % Provided ,
+  "io.confluent" % "kafka-connect-avro-converter" % Versions.Confluent % Provided,
+  "org.slf4j" % "slf4j-api" % Versions.Slf4j,
+  "org.slf4j" % "jcl-over-slf4j" % Versions.Slf4j,
+  "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test,it",
+  "org.scalacheck" %% "scalacheck" % Versions.ScalaCheck % "test,it"
+) map {
+/*
+lazy val dependencies = Seq(
+  //  "com.amazonaws" % "aws-java-sdk" % Versions.AwsSdk,
   "com.amazonaws" % "amazon-sqs-java-messaging-lib" % Versions.AwsSqsJms,
   "org.apache.avro" % "avro" % Versions.Avro,
   "org.apache.kafka" % "kafka-clients" % Versions.Kafka,
   "org.apache.kafka" % "connect-api" % Versions.Kafka,
   "io.confluent" % "kafka-avro-serializer" % Versions.Confluent,
   "io.confluent" % "kafka-schema-registry-client" % Versions.Confluent,
+  "io.confluent" % "kafka-connect-avro-converter" % Versions.Confluent,
   "org.slf4j" % "slf4j-api" % Versions.Slf4j,
-  "org.slf4j" % "jcl-over-slf4j" % Versions.Slf4j  ,
+  "org.slf4j" % "jcl-over-slf4j" % Versions.Slf4j,
   "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test,it",
   "org.scalacheck" %% "scalacheck" % Versions.ScalaCheck % "test,it"
 ) map {
+*/
   _.excludeAll(
     ExclusionRule(name = "javax.activation"),
     ExclusionRule(name = "javax.mail.glassfish"),

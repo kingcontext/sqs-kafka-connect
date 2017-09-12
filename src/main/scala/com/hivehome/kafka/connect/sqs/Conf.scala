@@ -26,7 +26,9 @@ case class Conf(queueName: Option[String] = None,
                 topicName: Option[String] = None,
                 awsRegion: String = "eu-west-1",
                 awsKey: Option[String] = None,
-                awsSecret: Option[String] = None) {
+                awsSecret: Option[String] = None,
+                awsProfile: Option[String] = None,
+                valueSchema: Option[String] = None) {
   def toMap: Map[String, String] = {
     import Conf._
     Map[String, Option[String]]()
@@ -34,6 +36,8 @@ case class Conf(queueName: Option[String] = None,
       .updated(DestinationKafkaTopic, topicName)
       .updated(AwsKey, awsKey)
       .updated(AwsSecret, awsSecret)
+      .updated(AwsProfile, awsProfile)
+      .updated(ValueSchema, valueSchema)
       .collect { case (k, Some(v)) => (k, v) }
   }
 }
@@ -44,12 +48,16 @@ object Conf {
   val AwsKey = "aws.key"
   val AwsSecret = "aws.secret"
   val AwsRegion = "aws.region"
+  val AwsProfile = "aws.profile"
+  val ValueSchema = "value.schema"
 
   val ConfigDef = new ConfigDef()
     .define(SourceSqsQueue, Type.STRING, Importance.HIGH, "Source SQS queue name to consumer from.")
     .define(DestinationKafkaTopic, Type.STRING, Importance.HIGH, "Destination Kafka topicName to publish data to")
-    .define(AwsKey, Type.STRING, Importance.MEDIUM, "AWS Key to connect to SQS")
-    .define(AwsSecret, Type.STRING, Importance.MEDIUM, "AWS secret to connect to SQS")
+//    .define(AwsKey, Type.STRING, null, Importance.MEDIUM, "AWS Key to connect to SQS")
+//    .define(AwsSecret, Type.STRING, null, Importance.MEDIUM, "AWS secret to connect to SQS")
+//    .define(AwsProfile, Type.STRING, null, Importance.MEDIUM, "AWS profile to connect to SQS")
+//    .define(ValueSchema, Type.STRING, null, Importance.MEDIUM, "Avro schema for the Kafka record value")
 
   def parse(props: Map[String, String]): Try[Conf] = Try {
     val queueName = props.get(Conf.SourceSqsQueue)
@@ -57,6 +65,8 @@ object Conf {
     val awsKey = props.get(Conf.AwsKey)
     val awsSecret = props.get(Conf.AwsSecret)
     val awsRegion = props.get(Conf.AwsRegion)
+    val awsProfile = props.get(Conf.AwsProfile)
+    val valueSchema = props.get(Conf.ValueSchema)
 
     if (queueName == null || queueName.isEmpty)
       throw new ConnectException("Configuration must include 'queueName' setting")
@@ -65,11 +75,12 @@ object Conf {
     if (topicName == null || topicName.isEmpty)
       throw new ConnectException("Configuration must include 'topicName' setting")
 
-    val conf = Conf(queueName = queueName, topicName = topicName, awsKey = awsKey, awsSecret = awsSecret)
+    val conf = Conf(queueName = queueName, topicName = topicName, awsKey = awsKey, awsSecret = awsSecret, awsProfile = awsProfile, valueSchema = valueSchema)
     awsRegion match {
       case Some(region) => conf.copy(awsRegion = region)
       case _ => conf
     }
+
   }
 }
 

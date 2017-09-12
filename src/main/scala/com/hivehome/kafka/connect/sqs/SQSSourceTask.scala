@@ -19,6 +19,7 @@ package com.hivehome.kafka.connect.sqs
 import java.util.{List => JList, Map => JMap}
 import javax.jms._
 
+import org.apache.avro.{Schema => AvroSchema}
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.source.{SourceRecord, SourceTask}
 import org.slf4j.LoggerFactory
@@ -30,7 +31,7 @@ import scala.util.control.NonFatal
 object SQSSourceTask {
   private val SqsQueueField: String = "queue"
   private val MessageId: String = "messageId"
-  private val ValueSchema = Schema.STRING_SCHEMA
+  private val KeySchema = Schema.STRING_SCHEMA
 }
 
 class SQSSourceTask extends SourceTask {
@@ -39,17 +40,32 @@ class SQSSourceTask extends SourceTask {
   private var consumer: MessageConsumer = null
   // MessageId to MessageHandle used to ack the message on the commitRecord method invocation
   private var unAcknowledgedMessages = Map[String, Message]()
+  private var valueSchema : AvroSchema = null
+  private var messageExtractor : MessageExtractor = null
 
   def version: String = Version()
 
   def start(props: JMap[String, String]): Unit = {
     conf = Conf.parse(props.asScala.toMap).get
+    start(conf)
+  }
+
+  def start(conf: Conf): Unit = {
+    val schemaString : Option[String] = conf.valueSchema
+    if (schemaString.isDefined) {
+      val parser: AvroSchema.Parser = new AvroSchema.Parser()
+      valueSchema = parser.parse(conf.valueSchema.get)
+      messageExtractor = new AvroMessageExtractor(valueSchema)
+    }
+    else {
+      messageExtractor = new MessageExtractor
+    }
 
     logger.debug("Creating consumer...")
     synchronized {
       try {
         consumer = SQSConsumer(conf)
-        logger.info("Created consumer to  SQS topic {} for reading", conf.queueName)
+        logger.info("Created consumer to SQS topic {} for reading", conf.queueName)
       }
       catch {
         case NonFatal(e) => logger.error("Exception", e)
@@ -62,16 +78,16 @@ class SQSSourceTask extends SourceTask {
   @throws(classOf[InterruptedException])
   def poll: JList[SourceRecord] = {
     def toRecord(msg: Message): SourceRecord = {
-      val extracted = MessageExtractor(msg)
+      val extracted = messageExtractor.extract(msg)
       val key = Map(SqsQueueField -> conf.queueName.get).asJava
       val value = Map(MessageId -> msg.getJMSMessageID).asJava
-      new SourceRecord(key, value, conf.topicName.get, ValueSchema, extracted)
+      new SourceRecord(key, value, conf.topicName.get, KeySchema, msg.getJMSMessageID, extracted.schema(), extracted.value())
     }
 
     assert(consumer != null) // should be initialised as part of start()
     Try {
       Option(consumer.receive).map { msg =>
-        logger.info("Received message {}", msg)
+        logger.debug("Received message {}", msg.getJMSMessageID)
 
         // This operation is not threadsafe as a result the plugin is not threadsafe.
         // However KafkaConnect assigns a single thread to each task and the poll
