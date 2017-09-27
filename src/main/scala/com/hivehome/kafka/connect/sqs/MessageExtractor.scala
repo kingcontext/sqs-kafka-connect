@@ -19,26 +19,6 @@ class AvroMessageExtractor(val schema: AvroSchema) extends MessageExtractor{
 
   override def value(s: String): SchemaAndValue = {
     logger.trace(s);
-
-    /*
-    var ss = s.replace("campaign name", "campaign_name");
-    if (!ss.contains("\"reason\"")) {
-      ss = ss.substring(0, ss.length -1) + ", \"reason\": \"\"}";
-    }
-    if (ss.contains("\"URL\"")) {
-      ss = ss.replace("\"URL\"", "\"url\"");
-    }
-    else if (!ss.contains("\"url\"")) {
-      ss = ss.substring(0, ss.length -1) + ", \"url\": \"\"}";
-    }
-    if (!ss.contains("\"sending_ip\"")) {
-      ss = ss.substring(0, ss.length -1) + ", \"sending_ip\": \"\"}";
-    }
-    if (!ss.contains("\"tag\"")) {
-      ss = ss.substring(0, ss.length -1) + ", \"tag\": \"\"}";
-    }
-    ss = ss.replaceAll("[\\t\\n\\r]+"," ") //ss.replaceAll("(\r\n)|\r|\n", "")
-    */
     val avroRecord : GenericRecord = reader.read(null, DecoderFactory.get().jsonDecoder(schema, s.replaceAll("[\\t\\n\\r]+"," ")));
     avroData.toConnectData(schema, avroRecord);
   }
